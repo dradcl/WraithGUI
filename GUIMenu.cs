@@ -7,6 +7,7 @@ namespace WraithGUI
     {
         public static Color[] allColors = { Color.red, Color.yellow, Color.green, Color.cyan, Color.blue, Color.magenta, Color.white, Color.grey, Color.black, };
         private static float tValue;
+        public static string ghostText = "";
         public static Color RandomColor()
         {
             return allColors[UnityEngine.Random.Range(0, allColors.Length)];

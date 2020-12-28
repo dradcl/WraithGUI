@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace WraithGUI
+﻿namespace PhasmoTestMod
 {
-    class GhostMethods
+    public class GhostMethods
     {
-
+        public static string GhostToString()
+        {
+            return $"Name: {CustomGhostController.ghosts[CustomGhostController.ghosts.Count - 1].ghostInfo.ghostTraits.ghostName} Type: {CustomGhostController.ghosts[CustomGhostController.ghosts.Count - 1].ghostInfo.ghostTraits.ghostType} Age: {CustomGhostController.ghosts[CustomGhostController.ghosts.Count - 1].ghostInfo.ghostTraits.ghostAge}\n";
+        }
     }
 }
