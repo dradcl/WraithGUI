@@ -11,7 +11,8 @@ namespace WraithGUI
     public sealed class PhasmoGame : MelonMod
     {
         private static readonly GUIStyle GUIStyle = new GUIStyle();
-        private static readonly GUIStyle backgroundStyle = new GUIStyle();
+        public static readonly GUIStyle backgroundStyle = new GUIStyle();
+        private GUIEx.DropdownState ghostDropdownState = new GUIEx.DropdownState();
         private bool menuIsEnabled = false;
         private bool mainMenuIsEnabled = false;
         private bool playerMenuIsEnabled = false;
@@ -19,9 +20,13 @@ namespace WraithGUI
         private bool levelMenuIsEnabled = false;
         private bool listGhostsIsEnabled = false;
         private bool ghostsAlwaysVisible = false;
+        private bool spawnMenuIsEnabled = false;
+        private string ghostNameEdit = "";
         private int levelNum;
         private float playerSpeed = 1.2f;
         private static string[] mapNames = { "Opening Scene", "Lobby", "Tanglewood Street", "Ridgeview Road House", "Edgefield Street House", "Asylum", "Brownstone High School", "Bleasdale Farmhouse" , "Grafton Farmhouse" };
+        private static string[] ghostTypeStrings = { "None", "Spirit", "Wraith", "Phantom", "Poltergeist", "Banshee", "Jinn", "Mare", "Revenant", "Shade", "Demon", "Yurei", "Oni"};
+        private static GhostTraits.Type[] ghostTypesArr = { GhostTraits.Type.none, GhostTraits.Type.Spirit, GhostTraits.Type.Wraith, GhostTraits.Type.Phantom, GhostTraits.Type.Poltergeist, GhostTraits.Type.Banshee, GhostTraits.Type.Jinn, GhostTraits.Type.Mare, GhostTraits.Type.Revenant, GhostTraits.Type.Shade, GhostTraits.Type.Demon, GhostTraits.Type.Yurei, GhostTraits.Type.Oni };
 
         public static LevelController levelController;
         public static GhostController ghostController;
@@ -31,7 +36,7 @@ namespace WraithGUI
         public override void OnApplicationStart()
         {
             MelonLogger.Log($"Successfully loaded v{typeof(PhasmoGame).Assembly.GetName().Version}. Enjoy!");
-            GUIStyle.alignment = TextAnchor.MiddleCenter;
+            GUIStyle.alignment = TextAnchor.UpperCenter;
             GUIStyle.fontSize = 16;
             GUIStyle.fontStyle = FontStyle.Bold;
             backgroundStyle.alignment = TextAnchor.MiddleCenter;
@@ -72,7 +77,7 @@ namespace WraithGUI
             if (menuIsEnabled)
             {
                 GUI.Box(new Rect(0, 0, Screen.width, 30), "");
-                GUI.Box(new Rect(0, 0, Screen.width, 25), "WraithGUI", GUIStyle);
+                GUI.Box(new Rect(0, 5, Screen.width, 25), "WraithGUI", GUIStyle);
 
                 if (GUI.Button(new Rect(5, 0, 50, 25), "Main", backgroundStyle)) { mainMenuIsEnabled = !mainMenuIsEnabled; }
 
@@ -124,10 +129,9 @@ namespace WraithGUI
 
                     if (GUI.Button(new Rect(20, 40, 100, 25), "List Ghosts", backgroundStyle)) { listGhostsIsEnabled = !listGhostsIsEnabled; }
 
-                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Ghost", backgroundStyle) && levelNum > 1)
+                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Menu", backgroundStyle) /*&& levelNum > 1*/)
                     {
-                        ghostController.SpawnGhost();
-                        GUIMenu.ghostText += GhostMethods.GhostToString();
+                        spawnMenuIsEnabled = !spawnMenuIsEnabled;
                     }
 
                     if (GUI.Button(new Rect(20, 100, 100, 25), "Ghosts Visible", backgroundStyle)) { ghostsAlwaysVisible = !ghostsAlwaysVisible; }
@@ -143,13 +147,26 @@ namespace WraithGUI
                         }
                     }
 
-                    if (GUI.Button(new Rect(20, 160, 100, 25), "Ghost Test", backgroundStyle) && levelNum > 1)
-                    {
-                        ghostController.SpawnGhost(GhostTraits.Type.Poltergeist);
-                        GUIMenu.ghostText += GhostMethods.GhostToString();
-                    }
-
                     if (listGhostsIsEnabled) { GUI.TextArea(new Rect(0, 300, 300, 300), GUIMenu.ghostText); }
+
+                    if (spawnMenuIsEnabled)
+                    {
+                        GUI.Box(new Rect(200, 31, 250, 250), "");
+                        GUI.Box(new Rect(200, 33, 250, 250), "Spawn Menu", GUIStyle);
+                        GUI.Label(new Rect(220, 60, 300, 250), "Type:");
+                        GUI.Label(new Rect(220, 90, 300, 250), "Name:");
+
+                        ghostNameEdit = GUI.TextField(new Rect(290, 92, 140, 20), ghostNameEdit, 25);
+
+                        if (GUI.Button(new Rect(280, 250, 100, 25), "Spawn", backgroundStyle))
+                        {
+                            ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select], ghostNameEdit);
+                            GUIMenu.ghostText += GhostMethods.GhostToString();
+                        }
+                        
+                        var styles = new GUIEx.DropdownStyles("button", "box", Color.white, 24, 8);
+                        ghostDropdownState = GUIEx.Dropdown(new Rect(290, 57, 150, 30), ghostTypeStrings, ghostDropdownState, styles);
+                    }
                 }
 
                 if (levelMenuIsEnabled)
