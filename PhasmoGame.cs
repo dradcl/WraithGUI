@@ -13,6 +13,7 @@ namespace WraithGUI
         private static readonly GUIStyle GUIStyle = new GUIStyle();
         public static readonly GUIStyle backgroundStyle = new GUIStyle();
         private GUIEx.DropdownState ghostDropdownState = new GUIEx.DropdownState();
+        private GUIEx.DropdownState roomDropdownState = new GUIEx.DropdownState();
         private bool menuIsEnabled = false;
         private bool mainMenuIsEnabled = false;
         private bool playerMenuIsEnabled = false;
@@ -24,7 +25,8 @@ namespace WraithGUI
         private string ghostNameEdit = "";
         private int levelNum;
         private float playerSpeed = 1.2f;
-        private static string[] mapNames = { "Opening Scene", "Lobby", "Tanglewood Street", "Ridgeview Road House", "Edgefield Street House", "Asylum", "Brownstone High School", "Bleasdale Farmhouse" , "Grafton Farmhouse" };
+        private string[] roomNames;
+        private static string[] mapNames = { "Opening Scene", "Lobby", "Tanglewood Street", "Asylum", "Edgefield Street House", "Ridgeview Road House", "Brownstone High School", "Bleasdale Farmhouse" , "Grafton Farmhouse" };
         private static string[] ghostTypeStrings = { "None", "Spirit", "Wraith", "Phantom", "Poltergeist", "Banshee", "Jinn", "Mare", "Revenant", "Shade", "Demon", "Yurei", "Oni"};
         private static GhostTraits.Type[] ghostTypesArr = { GhostTraits.Type.none, GhostTraits.Type.Spirit, GhostTraits.Type.Wraith, GhostTraits.Type.Phantom, GhostTraits.Type.Poltergeist, GhostTraits.Type.Banshee, GhostTraits.Type.Jinn, GhostTraits.Type.Mare, GhostTraits.Type.Revenant, GhostTraits.Type.Shade, GhostTraits.Type.Demon, GhostTraits.Type.Yurei, GhostTraits.Type.Oni };
 
@@ -48,7 +50,14 @@ namespace WraithGUI
             MelonLogger.Log($"{mapNames[level]} was initialized");
             InitializeGameObjects(); // This will ensure the level is never null
 
-            if (level == 1) { GUIMenu.ghostText = ""; }
+            if (level == 1)
+            {
+                GUIMenu.ghostText = "";
+            }
+            else if (level > 1)
+            {
+                roomNames = GetRoomStrings();
+            }
         }
         public override void OnUpdate()
         {
@@ -129,10 +138,7 @@ namespace WraithGUI
 
                     if (GUI.Button(new Rect(20, 40, 100, 25), "List Ghosts", backgroundStyle)) { listGhostsIsEnabled = !listGhostsIsEnabled; }
 
-                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Menu", backgroundStyle) /*&& levelNum > 1*/)
-                    {
-                        spawnMenuIsEnabled = !spawnMenuIsEnabled;
-                    }
+                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Menu", backgroundStyle)) { spawnMenuIsEnabled = !spawnMenuIsEnabled; }
 
                     if (GUI.Button(new Rect(20, 100, 100, 25), "Ghosts Visible", backgroundStyle)) { ghostsAlwaysVisible = !ghostsAlwaysVisible; }
 
@@ -155,17 +161,50 @@ namespace WraithGUI
                         GUI.Box(new Rect(200, 33, 250, 250), "Spawn Menu", GUIStyle);
                         GUI.Label(new Rect(220, 60, 300, 250), "Type:");
                         GUI.Label(new Rect(220, 90, 300, 250), "Name:");
-
-                        ghostNameEdit = GUI.TextField(new Rect(290, 92, 140, 20), ghostNameEdit, 25);
+                        GUI.Label(new Rect(220, 120, 300, 250), "Room:");
 
                         if (GUI.Button(new Rect(280, 250, 100, 25), "Spawn", backgroundStyle))
                         {
-                            ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select], ghostNameEdit);
+                            if (ghostNameEdit == "")
+                            {
+                                if (roomDropdownState.Caption == "Random")
+                                {
+                                    MelonLogger.Log($"{mapNames[levelNum]} has {levelController.rooms.Length} rooms");
+                                    ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select]);
+                                    GUIMenu.ghostText += GhostMethods.GhostToString();
+                                }
+                                else
+                                {
+                                    ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select], roomDropdownState.Select);
+                                    GUIMenu.ghostText += GhostMethods.GhostToString();
+                                }
+                            }
+                            else
+                            {
+                                if (roomDropdownState.Caption == "Random")
+                                {
+                                    ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select], ghostNameEdit);
+                                    GUIMenu.ghostText += GhostMethods.GhostToString();
+                                }
+                                else
+                                {
+                                    ghostController.SpawnGhost(ghostTypesArr[ghostDropdownState.Select], ghostNameEdit, roomDropdownState.Select);
+                                    GUIMenu.ghostText += GhostMethods.GhostToString();
+                                }
+                            }
+                        }
+
+                        if (GUI.Button(new Rect(280, 220, 100, 25), "Spawn Random", backgroundStyle))
+                        {
+                            ghostController.SpawnGhost();
                             GUIMenu.ghostText += GhostMethods.GhostToString();
                         }
-                        
+
+                        // Unity renders this last so it will be on top
                         var styles = new GUIEx.DropdownStyles("button", "box", Color.white, 24, 8);
                         ghostDropdownState = GUIEx.Dropdown(new Rect(290, 57, 150, 30), ghostTypeStrings, ghostDropdownState, styles);
+                        roomDropdownState = GUIEx.Dropdown(new Rect(290, 120, 150, 30), roomNames, roomDropdownState, styles);
+                        ghostNameEdit = GUI.TextField(new Rect(290, 92, 140, 20), ghostNameEdit, 25);
                     }
                 }
 
@@ -180,6 +219,28 @@ namespace WraithGUI
             }
         }
 
+        private string[] GetRoomStrings()
+        {
+            string[] roomStrings;
+
+            // Skip high school and asylum until I find a better way to do it
+            if (!(levelNum == 3 || levelNum == 6))
+            {
+                roomStrings = new string[levelController.rooms.Length + 1];
+                roomStrings[0] = "Random";
+
+                for (int i = 1; i < levelController.rooms.Length; i++)
+                {
+                    roomStrings[i] = levelController.rooms[i].roomName;
+                }
+            }
+            else
+            {
+                roomStrings = new string[] { "Random" };
+            }
+
+            return roomStrings;
+        }
         private void InitializeGameObjects()
         {
             levelController = UnityEngine.Object.FindObjectOfType<LevelController>();
