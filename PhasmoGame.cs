@@ -11,9 +11,12 @@ namespace WraithGUI
     public sealed class PhasmoGame : MelonMod
     {
         private static readonly GUIStyle GUIStyle = new GUIStyle();
-        public static readonly GUIStyle backgroundStyle = new GUIStyle();
         private GUIEx.DropdownState ghostDropdownState = new GUIEx.DropdownState();
         private GUIEx.DropdownState roomDropdownState = new GUIEx.DropdownState();
+        public static GUIEx.DropdownState primaryDropdownState = new GUIEx.DropdownState();
+        public static GUIEx.DropdownState secondaryDropdownState = new GUIEx.DropdownState();
+        public static readonly GUIStyle backgroundStyle = new GUIStyle();
+
         private bool menuIsEnabled = false;
         private bool mainMenuIsEnabled = false;
         private bool playerMenuIsEnabled = false;
@@ -22,9 +25,12 @@ namespace WraithGUI
         private bool listGhostsIsEnabled = false;
         private bool ghostsAlwaysVisible = false;
         private bool spawnMenuIsEnabled = false;
+        private bool colorMenuIsEnabled = false;
+
         private string ghostNameEdit = "";
         private int levelNum;
-        private float playerSpeed = 1.2f;
+        private float playerSpeed = 1.2f; // Default player speed
+
         private string[] roomNames;
         private static string[] mapNames = { "Opening Scene", "Lobby", "Tanglewood Street", "Asylum", "Edgefield Street House", "Ridgeview Road House", "Brownstone High School", "Bleasdale Farmhouse" , "Grafton Farmhouse" };
         private static string[] ghostTypeStrings = { "None", "Spirit", "Wraith", "Phantom", "Poltergeist", "Banshee", "Jinn", "Mare", "Revenant", "Shade", "Demon", "Yurei", "Oni"};
@@ -43,12 +49,16 @@ namespace WraithGUI
             GUIStyle.fontStyle = FontStyle.Bold;
             backgroundStyle.alignment = TextAnchor.MiddleCenter;
             backgroundStyle.normal.textColor = Color.white;
+
+            // Default menu colors. 3 = cyan, 5 = magenta
+            primaryDropdownState.Select = 3;
+            secondaryDropdownState.Select = 5;
         }
         public override void OnLevelWasInitialized(int level)
         {
             levelNum = level; // Save this for checks later.
             MelonLogger.Log($"{mapNames[level]} was initialized");
-            InitializeGameObjects(); // This will ensure the level is never null
+            InitializeGameObjects(); // By calling this here, it will ensure the level is never null
 
             if (level == 1)
             {
@@ -62,12 +72,15 @@ namespace WraithGUI
         public override void OnUpdate()
         {
             // Open Menu (F1)
-            if (Keyboard.current.f1Key.wasPressedThisFrame) { menuIsEnabled = !menuIsEnabled; }
+            if (Keyboard.current.f1Key.wasPressedThisFrame && levelNum > 1)
+                menuIsEnabled = !menuIsEnabled;
 
             GUIMenu.CycleColors(GUIStyle);
             GUIMenu.CycleColors(backgroundStyle, true);
 
-            if (levelNum > 1) { player.firstPersonController.m_WalkSpeed = playerSpeed; }
+            // This is for the speed slider, each frame set the applied speed from the slider
+            if (levelNum > 1)
+                player.firstPersonController.m_WalkSpeed = playerSpeed;
 
             // Always visible ghosts
             if (ghostsAlwaysVisible && levelNum > 1 && levelController.currentGhost != null)
@@ -88,35 +101,32 @@ namespace WraithGUI
                 GUI.Box(new Rect(0, 0, Screen.width, 30), "");
                 GUI.Box(new Rect(0, 5, Screen.width, 25), "WraithGUI", GUIStyle);
 
-                if (GUI.Button(new Rect(5, 0, 50, 25), "Main", backgroundStyle)) { mainMenuIsEnabled = !mainMenuIsEnabled; }
+                if (GUI.Button(new Rect(5, 0, 50, 25), "Main", backgroundStyle))
+                    mainMenuIsEnabled = !mainMenuIsEnabled;
 
-                if (GUI.Button(new Rect(65, 0, 60, 25), "Maps", backgroundStyle))
-                {
-                    
-                }
+                if (GUI.Button(new Rect(65, 0, 60, 25), "Maps", backgroundStyle)) { }
 
                 if (GUI.Button(new Rect(135, 0, 65, 25), "Colors", backgroundStyle))
-                {
+                    colorMenuIsEnabled = !colorMenuIsEnabled;
 
-                }
-
-                if (GUI.Button(new Rect(210, 0, 65, 25), "Players", backgroundStyle))
-                {
-
-                }
+                if (GUI.Button(new Rect(210, 0, 65, 25), "Players", backgroundStyle)) { }
 
                 if (mainMenuIsEnabled)
                 {
                     playerMenuIsEnabled = false;
                     levelMenuIsEnabled = false;
                     ghostMenuIsEnabled = false;
+                    colorMenuIsEnabled = false;
+
                     GUI.Box(new Rect(0, 31, 150, 250), "");
+                    if (GUI.Button(new Rect(20, 40, 100, 25), "Player Menu", backgroundStyle))
+                        playerMenuIsEnabled = !playerMenuIsEnabled;
 
-                    if (GUI.Button(new Rect(20, 40, 100, 25), "Player Menu", backgroundStyle)) { playerMenuIsEnabled = !playerMenuIsEnabled; }
-
-                    if (GUI.Button(new Rect(20, 70, 100, 25), "Ghost Menu", backgroundStyle)) { ghostMenuIsEnabled = !ghostMenuIsEnabled; }
+                    if (GUI.Button(new Rect(20, 70, 100, 25), "Ghost Menu", backgroundStyle))
+                        ghostMenuIsEnabled = !ghostMenuIsEnabled;
                     
-                    if (GUI.Button(new Rect(20, 100, 100, 25), "Level Menu", backgroundStyle)) { levelMenuIsEnabled = !levelMenuIsEnabled; }
+                    if (GUI.Button(new Rect(20, 100, 100, 25), "Level Menu", backgroundStyle))
+                        levelMenuIsEnabled = !levelMenuIsEnabled;
                 }
 
                 if (playerMenuIsEnabled)
@@ -124,9 +134,26 @@ namespace WraithGUI
                     mainMenuIsEnabled = false;
                     ghostMenuIsEnabled = false;
                     levelMenuIsEnabled = false;
+                    colorMenuIsEnabled = false;
+
                     GUI.Box(new Rect(0, 31, 150, 250), "");
-                    if (GUI.Button(new Rect(20, 40, 100, 25), "player test", backgroundStyle)) {  }
+                    GUI.Label(new Rect(20, 40, 100, 25), "Speed Slider:");
+
                     playerSpeed = GUI.HorizontalSlider(new Rect(20, 70, 100, 30), playerSpeed, 0.0F, 10.0F);
+                }
+
+                if (colorMenuIsEnabled)
+                {
+                    var styles = new GUIEx.DropdownStyles("button", "box", Color.white, 24, 8);
+                    playerMenuIsEnabled = false;
+                    levelMenuIsEnabled = false;
+                    ghostMenuIsEnabled = false;
+
+                    GUI.Box(new Rect(0, 31, 200, 150), "");
+                    GUI.Label(new Rect(20, 40, 100, 25), "Primary Color");
+                    GUI.Label(new Rect(20, 110, 100, 25), "Secondary Color");
+                    secondaryDropdownState = GUIEx.Dropdown(new Rect(20, 135, 150, 30), GUIMenu.colorStrings, secondaryDropdownState, styles);
+                    primaryDropdownState = GUIEx.Dropdown(new Rect(20, 65, 150, 30), GUIMenu.colorStrings, primaryDropdownState, styles);
                 }
 
                 if (ghostMenuIsEnabled)
@@ -134,13 +161,16 @@ namespace WraithGUI
                     mainMenuIsEnabled = false;
                     playerMenuIsEnabled = false;
                     levelMenuIsEnabled = false;
+
                     GUI.Box(new Rect(0, 31, 150, 250), "");
+                    if (GUI.Button(new Rect(20, 40, 100, 25), "List Ghosts", backgroundStyle))
+                        listGhostsIsEnabled = !listGhostsIsEnabled;
 
-                    if (GUI.Button(new Rect(20, 40, 100, 25), "List Ghosts", backgroundStyle)) { listGhostsIsEnabled = !listGhostsIsEnabled; }
+                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Menu", backgroundStyle))
+                        spawnMenuIsEnabled = !spawnMenuIsEnabled;
 
-                    if (GUI.Button(new Rect(20, 70, 100, 25), "Spawn Menu", backgroundStyle)) { spawnMenuIsEnabled = !spawnMenuIsEnabled; }
-
-                    if (GUI.Button(new Rect(20, 100, 100, 25), "Ghosts Visible", backgroundStyle)) { ghostsAlwaysVisible = !ghostsAlwaysVisible; }
+                    if (GUI.Button(new Rect(20, 100, 100, 25), "Ghosts Visible", backgroundStyle))
+                        ghostsAlwaysVisible = !ghostsAlwaysVisible;
 
                     if (GUI.Button(new Rect(20, 130, 100, 25), "Start Hunting", backgroundStyle))
                     {
@@ -153,7 +183,8 @@ namespace WraithGUI
                         }
                     }
 
-                    if (listGhostsIsEnabled) { GUI.TextArea(new Rect(0, 300, 300, 300), GUIMenu.ghostText); }
+                    if (listGhostsIsEnabled)
+                        GUI.TextArea(new Rect(0, 300, 300, 300), GUIMenu.ghostText);
 
                     if (spawnMenuIsEnabled)
                     {
@@ -213,8 +244,13 @@ namespace WraithGUI
                     mainMenuIsEnabled = false;
                     playerMenuIsEnabled = false;
                     ghostMenuIsEnabled = false;
+                    colorMenuIsEnabled = false;
+
                     GUI.Box(new Rect(0, 31, 150, 250), "");
-                    if (GUI.Button(new Rect(20, 40, 100, 25), "level test", backgroundStyle)) {  }
+                    if (GUI.Button(new Rect(20, 40, 100, 25), "INCOMPLETE", backgroundStyle))
+                    {
+
+                    }
                 }
             }
         }
