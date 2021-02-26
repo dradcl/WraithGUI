@@ -1,5 +1,0 @@
-# WraithGUI
-
-# Features
-
-# Getting Started
