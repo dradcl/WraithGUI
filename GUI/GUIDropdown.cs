@@ -42,30 +42,17 @@ public static class GUIEx
         }
         public float currentStatusStartTime { get; private set; }
     }
-
-
     public class DropdownStyles
     {
         /// <summary>
         /// GUIStyle for caption label
         /// </summary>
         public GUIStyle Caption;
+
         /// <summary>
         /// GUIStyle for options
         /// </summary>
         public GUIStyle Option;
-        /// <summary>
-        /// Color of arrow
-        /// </summary>
-        public Color ArrowColor = new Color(0.5f, 0.5f, 0.5f);
-        /// <summary>
-        /// Size of arrow
-        /// </summary>
-        public int ArrowSize = 16;
-        /// <summary>
-        /// Right margin of arrow
-        /// </summary>
-        public int ArrowMargin = 8;
 
         public DropdownStyles(GUIStyle caption, GUIStyle option)
         {
@@ -77,36 +64,11 @@ public static class GUIEx
         {
             this.Caption = caption;
             this.Option = option;
-            this.ArrowColor = arrowColor;
-            this.ArrowSize = arrowSize;
-            this.ArrowMargin = arrowMargin;
         }
     }
-
-    static Texture2D arrowTexture_ = null;
-    static GUISkin skin_ = null;
     static DropdownStyles defaultDropdownStyles_ = null;
-
-    static void setup()
-    {
-        if (arrowTexture_ == null)
-        {
-            arrowTexture_ = Resources.Load<Texture2D>("arrow");
-        }
-        if (skin_ == null)
-        {
-            skin_ = Resources.Load<GUISkin>("Dropdown");
-        }
-        if (defaultDropdownStyles_ == null)
-        {
-            defaultDropdownStyles_ = new DropdownStyles(skin_.button, skin_.FindStyle("dropdown_option"));
-        }
-    }
-
     public static DropdownState Dropdown(Rect position, string[] options, DropdownState state, DropdownStyles styles = null)
     {
-        //setup();
-
         if (styles == null)
         {
             styles = defaultDropdownStyles_;
@@ -126,7 +88,6 @@ public static class GUIEx
 
         return state;
     }
-
     static DropdownState closedDropdown(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         if (drawCaption(position, options, state, styles))
@@ -135,7 +96,6 @@ public static class GUIEx
         }
         return state;
     }
-
     static DropdownState openingDropdown(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         const float fadeTime = 0.1f;
@@ -154,7 +114,6 @@ public static class GUIEx
         }
         return state;
     }
-
     static DropdownState openedDropdown(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         if (drawCaption(position, options, state, styles))
@@ -169,7 +128,6 @@ public static class GUIEx
         }
         return state;
     }
-
     static DropdownState closingDropdown(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         const float fadeTime = 0.1f;
@@ -189,7 +147,6 @@ public static class GUIEx
         }
         return state;
     }
-
     static bool drawCaption(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         if (0 <= state.Select && state.Select < options.Length)
@@ -200,19 +157,8 @@ public static class GUIEx
         // Caption
         bool pushed = GUI.Button(position, state.Caption, PhasmoGame.backgroundStyle);
 
-        // Arrow
-        var arrowPosition = new Rect(
-            position.xMax - styles.ArrowMargin - styles.ArrowSize,
-            position.center.y - styles.ArrowSize / 2,
-            styles.ArrowSize, styles.ArrowSize);
-        var prevColor = GUI.color;
-        GUI.color = styles.ArrowColor;
-        GUI.DrawTexture(arrowPosition, arrowTexture_);
-        GUI.color = prevColor;
-
         return pushed;
     }
-
     static int drawDropdownList(Rect position, string[] options, DropdownState state, DropdownStyles styles)
     {
         int newSelect = -1;
@@ -237,5 +183,4 @@ public static class GUIEx
 
         return newSelect;
     }
-
 }
